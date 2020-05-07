@@ -5,6 +5,8 @@ A python code for the computation of excited states of the Transverse Ising mode
   <li>In the file <b>"E.py "</b> the is the definition of the Heisenberg Hamiltonian and the momentum operator. 
 </li>
   <li>The <b>"matrix_plot.py"</b> can by used to create 2d plots from the matrices in <b>"E.py"</b> as well a scatter plot of momenta vs Energy of the excited states.
+    ![alt text]
+    (https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/scatter.png)
 </li>
   <li>The <b>"circuit.py"</b> has definitions of the circuits that can be used for the computations.
 </li>
