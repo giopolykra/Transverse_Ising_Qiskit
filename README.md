@@ -5,8 +5,15 @@ A python code for the computation of excited states of the Transverse Ising mode
   <li>In the file <b>"E.py "</b> the is the definition of the Heisenberg Hamiltonian and the momentum operator. 
 </li>
   <li>The <b>"matrix_plot.py"</b> can by used to create 2d plots from the matrices in <b>"E.py"</b> as well a scatter plot of momenta vs Energy of the excited states.
-    ![Alt text](scatter.png)
-</li>
+
+
+<img src="https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/matrices_N2h1.png" width="2500">
+
+<p align="center">
+<img src="https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/scatter_N2h1.png" width="450">
+</p>
+
+  </li>
   <li>The <b>"circuit.py"</b> has definitions of the circuits that can be used for the computations.
 </li>
   <li>The <b>"states.py"</b> creates the <b>"state_dict.py"</b> file which contains the eigenvalues and eigenvectors of the Heisenberg Hamiltonian.
@@ -49,3 +56,5 @@ If the user wants to use some other quantum information library other than Qiski
 
 Please note that the code is currently under heavy customization.
 The code is made to test arXiv:2002.06210v2 and arXiv:1805.08138v5
+![Alt text](https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/log.png)
+![Alt text](https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/en_N2_e1.png)
