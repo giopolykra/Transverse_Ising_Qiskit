@@ -13,8 +13,13 @@ A python code for the computation of excited states of the Transverse Ising mode
 <img src="https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/scatter_N2h1.png" width="450">
 </p>
 
-  </li>
+</li>
   <li>The <b>"circuit.py"</b> has definitions of the circuits that can be used for the computations.
+  
+<img src="https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/sz_circuit_n4layers3.png" width="450">
+
+<img src="https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/sz_circuit2_n4layers3.png" width="450">
+
 </li>
   <li>The <b>"states.py"</b> creates the <b>"state_dict.py"</b> file which contains the eigenvalues and eigenvectors of the Heisenberg Hamiltonian.
 </li>
