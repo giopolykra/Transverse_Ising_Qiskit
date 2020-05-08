@@ -10,7 +10,7 @@ from b_values_data import *
 from scipy.optimize import minimize
 from custom_optimizers import *
 from b_values_data import *
-
+import numpy.linalg as linalg
 #error_calls = []
 #momenta_calls = []
 #opt_energy = []
@@ -31,12 +31,13 @@ def psi(param,N,layers,PBC):
     backend = Aer.get_backend('statevector_simulator')
     result = execute(qc0, backend).result()
     psi = result.get_statevector(qc0, decimals=5)
+    psi = np.reshape(psi,(2**N,1))
     return(psi)
 
 def base_term(param,N,layers,J,h,PBC,p,opt_param,epsilon):
     H = eval('HeisenbergHamiltonian({},{},{},PBC={})'.format(N,J,h,PBC))
-    energy = np.dot(np.conjugate(psi(param,N,layers,PBC).T),np.dot(H,psi(param,N,layers,PBC))).real
-    return(energy)
+    energy = np.dot(psi(param,N,layers,PBC).conj().T,np.dot(H,psi(param,N,layers,PBC))).real
+    return(energy[0][0])
 
 def extra_term(param,N,layers,J,h,PBC,p,opt_param,epsilon):
     h_name = str(h[0]).replace(".","")
@@ -44,94 +45,129 @@ def extra_term(param,N,layers,J,h,PBC,p,opt_param,epsilon):
     extra_term = np.dot(np.conjugate(psi(param,N,layers,PBC).T),np.dot(H,psi(param,N,layers,PBC))).real
     b = np.array(eval('b_N{}J{}h{}_{}_k{}'.format(N,int(J[2]),h_name,str(PBC),p)))*epsilon
     for k in range(len(b)):
-        extra_term+=b[k]*np.abs(np.dot(np.conjugate(psi(param,N,layers,PBC).T),psi(opt_param[k],N,layers,PBC)))**2
+        a = np.dot(psi(param,N,layers,PBC).conj().T,psi(opt_param[k],N,layers,PBC))
+        a = a*np.dot(psi(opt_param[k],N,layers,PBC).conj().T,psi(param,N,layers,PBC))
+        extra_term+=b[k]*a[0][0].real
     return(extra_term)
 
 def error_callbacks(param,N,layers,J,h,PBC,p,error_calls):
     h_name = str(h[0]).replace(".","")
     state_th = list(eval('dict_vec_HT_N{}J{}h{}_{}'.format(N,int(J[2]),h_name,str(PBC))).values())[p]
-    error =  1- np.abs(np.dot(np.conjugate(psi(param,N,layers,PBC).T),state_th))**2
+    a = np.dot(psi(param,N,layers,PBC).conj().T,state_th)
+    a = a*np.dot(state_th.conj().T,psi(param,N,layers,PBC))
+    error =  1- a[0].real
     error_calls.append(error)
 # energy_calls = []
 
 def momenta_callbacks(param,N,layers,J,h,PBC,p,momenta_calls):
     h_name = str(h[0]).replace(".","")
     T = eval('getT({})'.format(N))
-    state_th = list(eval('dict_vec_HT_N{}J{}h{}_{}'.format(N,int(J[2]),h_name,str(PBC))).values())[p]
-    momenta = np.angle(np.dot(np.dot(state_th.conj().T,T),state_th))/np.pi
+    state = psi(param,N,layers,PBC)
+    momenta = np.angle(np.dot(np.dot(state.conj().T,T),state)[0][0])
+    if np.abs(momenta+np.pi)<1E-6:
+        momenta = -1.*momanta
+    momenta = momenta/np.pi
+#    state_th = list(eval('dict_vec_HT_N{}J{}h{}_{}'.format(N,int(J[2]),h_name,str(PBC))).values())[p]
+#    momenta = np.angle(np.dot(np.dot(state_th.conj().T,T),state_th))/np.pi
     momenta_calls.append(momenta)
 
-#def base_term(param,layers,N,J,h,PBC,p,opt_param):
-#    H = eval('HeisenbergHamiltonian({},{},{},PBC={})'.format(N,J,h,PBC))
-#    state = psi(param,layers,N,J,h,PBC)
-#    state = np.array([state])
-#    energy = (np.dot(state,np.dot(H,state.conjugate().T)).real)[0]
-#    return(energy[0])
+N = 4
+K=2
+J = [0,0,1]
+h = [0.5,0,0]
+PBC = True
+layers = 2
+Iter = 5
+param = parameters(N,layers, PBC = PBC)
+opt_param = [parameters(N,layers, PBC = PBC)]
+momenta_calls = []
+epsilon = 1
+p=1
+k=0
+H = HeisenbergHamiltonian(N,J,h,PBC = PBC)
+T = getT(N)
 
-#def extra_term(param,layers,N,J,h,PBC,p,opt_param):
-#    h_name = str(h[0]).replace('.','')
-#    H = eval('HeisenbergHamiltonian({},{},{},PBC={})'.format(N,J,h,PBC))
-#    state = psi(param,layers,N,J,h,PBC)
-#    state = np.array([state])
-#    #sys.stdout.write('state => {}\n'.format(state))
-#    extra_term = np.dot(state,np.dot(H,state.conjugate().T)).real[0]
-#    b = np.array(eval('b_N{}J{}h{}_{}_k{}'.format(N,int(J[2]),h_name,str(PBC),p)))
-#    for k in range(len(b)):
-#        state_old = psi(opt_param[k],layers,N,J,h,PBC)
-#        #sys.stdout.write('state_old => {}\n'.format(state_old))
-#        state_old = np.array([state_old])
-#        extra_term += b[k]*(np.dot(state,state_old.conjugate().T).real)[0]**2
-#    return(extra_term[0])
+E1, E2 = linalg.eig(H)
+U1, U2 = linalg.eig(T)
+ind = E1.real.argsort()[::+1]
+E1 = E1[ind].real
+E2 = E2[:,ind]
+states = []
+a = []
 
-#def extra_term(param,layers,N,J,h,PBC,p,opt_param):
-#    h_name = str(h[0]).replace('.','')
-#    H = eval('HeisenbergHamiltonian({},{},{},PBC={})'.format(N,J,h,PBC))
-#    state = psi(param,layers,N,J,h,PBC)
-#    extra_term = np.dot(state,np.dot(H,state.conjugate().T)).real
-#    b = np.array(eval('b_N{}J{}h{}_{}_k{}'.format(N,int(J[2]),h_name,str(PBC),p)))
-#    for k in range(len(b)):
-#        state_old = psi(opt_param[k],layers,N,J,h,PBC)
-#        extra_term += b[k]*(np.dot(state,state_old.conjugate().T).real)**2
-#    return extra_term
+momenta_th = []
+energy_th = []
+for k in range(len(E1)):
+    locals()['state_{}'.format(k)] = []
+    for i in range(len(E1)):
+        locals()['state_{}'.format(k)].append(E2[i][k])
+    locals()['state_{}'.format(k)] = np.asarray(eval('state_{}'.format(k)))
+    p = np.angle(np.dot(np.dot(eval('state_{}'.format(k)).conj().T,T),eval('state_{}'.format(k))))/np.pi
+    if abs(p)<1E-6: p=0
+    momenta_th.append(p)
+    energy_th.append( np.dot(np.dot(eval('state_{}'.format(k)),H),eval('state_{}'.format(k))).real)
 
-#def opt_param_callbacks(param,opt_param):
-#    opt_param.append(np.array(param))
+print('momenta\x09->{}\nenergy\x09->{}'.format(momenta_th,energy_th))
+#E0 = np.dot(np.dot(state.conj().T,H),state)
+#U1 = np.angle(U1)/np.pi
+#U1 = U1[ind]
+
+#state0 = [0,0,0,0]
+#state1 = np.zeros(2**N)
+#state1[1] = -1
+#state1[2] = 1
+#state1 = np.reshape(state1,(2**N,1))
+#momenta = np.dot(np.dot(state1.conj().T,T),state1)[0][0]
+#momenta = np.angle(np.dot(np.dot(state1.conj().T,T),state1))/np.pi
+#print(E0,'\n',E1,'\n',U1)
+#a = np.dot(psi(param,N,layers,PBC).conj().T,psi(opt_param[k],N,layers,PBC))
+#a = a*np.dot(psi(opt_param[k],N,layers,PBC).conj().T,psi(param,N,layers,PBC))
 #
-#def opt_energy_callbacks(x,opt_energy):
-#    opt_energy.append(x)
-
-#def error_callbacks(param,layers,N,J,h,PBC,p,error_calls):
-#    h_name = str(h[0]).replace('.','')
-#    state_th = list(eval('dict_vec_HT_N{}J{}h{}_{}'.format(N,int(J[2]),h_name,str(PBC))).values())[p]
-#    state_th = np.array([state_th])
-#    state = psi(param,layers,N,J,h,PBC)
-#    state = np.array([state])
-#    error =  1- np.abs(np.dot(state,state_th.conjugate().T))**2
-#    error_calls.append(error[0][0])
+#state_th = list(eval('dict_vec_HT_N{}J{}h{}_{}'.format(N,int(J[2]),str(h[0]).replace(".",""),str(PBC))).values())[p]
 #
-#def momenta_callbacks(param,N,J,h,PBC,p,momenta_calls):
-#    h_name = str(h[0]).replace('.','')
-#    T = eval('getT({})'.format(N))
-#    state_th = list(eval('dict_vec_HT_N{}J{}h{}_{}'.format(N,int(J[2]),h_name,str(PBC))).values())[p]
-#    state_th = np.array([state_th])
-#    momenta = np.angle(np.dot(np.dot(state_th,T),state_th.conjugate().T))/np.pi
-#    momenta_calls.append(momenta[0][0])
+#b = np.dot(psi(param,N,layers,PBC).conj().T,state_th)
+#b = b*np.dot(state_th.conj().T,psi(param,N,layers,PBC))
+#er = 1- b[0].real
+#print(er)
 
-
-#N = 2
-#K=4
-#J = [0,0,1]
-#h = [0.5,0,0]
-#PBC = True
-#p=0
-#layers = 2
-#Iter = 5
-#x0 = parameters(N,layers, PBC = PBC)
-#opt_param = []
-#epsilon = 1
 #H = eval('HeisenbergHamiltonian({},{},{},PBC={})'.format(N,J,h,PBC))
-#ret = minimize(base_term,x0,args=(N,layers,J,h,PBC,p,opt_param,epsilon),method='COBYLA',jac=None, bounds=None, tol=None, callback=None,options={'maxiter': 100})
-#print(ret)
+#energy = np.dot(psi(x0,N,layers,PBC).conj().T,np.dot(H,psi(x0,N,layers,PBC)))
+#print(energy)
+#a = np.dot(psi(x0,N,layers,PBC).conj().T,psi(opt_param[0],N,layers,PBC))
+#a = a*np.dot(psi(opt_param[0],N,layers,PBC).conj().T,psi(x0,N,layers,PBC))
+#print(a[0][0].real)
+#state_th = list(eval('dict_vec_HT_N{}J{}h{}_{}'.format(N,int(J[2]),str(h[0]).replace(".",""),str(PBC))).values())[p]
+#a = np.abs(np.dot(np.conjugate(psi(x0,N,layers,PBC).T),state_th))
+#print('First a:\x09',a)
+#a  = np.dot(a.conj().T,a)
+#print('Second a:\x09',a)
+#error =  1- a[0][0]
+#bs = base_term(x0,N,layers,J,h,PBC,p,opt_param,epsilon)
+#print(bs)
+#a = np.dot(psi(x0,N,layers,PBC).conj().T,psi(x0,N,layers,PBC))*np.dot(psi(x0,N,layers,PBC).conj().T,psi(x0,N,layers,PBC))
+#print(a)
+#ex = extra_term(x0,N,layers,J,h,PBC,p,opt_param,epsilon)
+#print(ex)
+#momenta_callbacks(x0,N,layers,J,h,PBC,p,momenta_calls)
+#print(momenta_calls)
+#H = eval('HeisenbergHamiltonian({},{},{},PBC={})'.format(N,J,h,PBC))
+#for p in range(K):
+#    if p==0:
+#        ret = minimize(base_term,x0,args=(N,layers,J,h,PBC,p,opt_param,epsilon),method='COBYLA',jac=None, bounds=None, tol=None, callback=None,options={'maxiter': 100})
+#        ret = [array(ret.x),ret.fun]
+#        sys.stdout.write('end ret\x09->{}\n'.format(ret[1]))
+#        sys.stdout.flush()
+#        res_sequencial = sequencial_minimizer(base_term,ret[0],Iter,N,layers,J,h,PBC,p,opt_param,epsilon)
+#        sys.stdout.write('end res_seq \x09-> {}\n'.format(res_sequencial[1]))
+#        sys.stdout.flush()
+#    else:
+#        ret = minimize(extra_term,x0,args=(N,layers,J,h,PBC,p,opt_param,epsilon),method='COBYLA',jac=None, bounds=None, tol=None, callback=None,options={'maxiter': 100})
+#        ret = [array(ret.x),ret.fun]
+#        sys.stdout.write('end ret\x09->{}\n'.format(ret[1]))
+#        sys.stdout.flush()
+#        res_sequencial = sequencial_minimizer(extra_term,ret[0],Iter,N,layers,J,h,PBC,p,opt_param,epsilon)
+#        sys.stdout.write('end res_seq \x09-> {}\n'.format(res_sequencial[1]))
+#        sys.stdout.flush()
 
 #T = getT(N)
 ##param = array([1.56921579, 6.907327  , 4.70751059, 6.28399227])

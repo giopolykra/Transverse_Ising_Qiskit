@@ -12,6 +12,8 @@ def plot_matrices(N,J,h,PBC = True):
 
     H = HeisenbergHamiltonian(N,J,h,PBC = PBC)
     T = getT(N)
+    # Test the commutation of the two operators
+    A = np.dot(T.conj().T,H)-np.dot(H.conj().T,T)
     # For testing the simultanious diagonalization may not work -> Plot the matrices in 2d
     HT = H+0.001*T
     U1, U2 = linalg.eig(HT)
@@ -32,15 +34,15 @@ def plot_matrices(N,J,h,PBC = True):
 
     Hd = np.dot(np.dot(U2.conj().T,H),U2).real
     Td = np.dot(np.dot(U2.conj().T,T),U2).real
-    Matrices1 = [Hd,Td]
+    Matrices1 = [Hd,Td,A]
     Matrices = []
 
     for M1 in Matrices1:
         Matrices.append(M1)
 
-    fig, ax = plt.subplots(nrows=1,ncols=2, figsize=(22, 10))
+    fig, ax = plt.subplots(nrows=1,ncols=3, figsize=(22, 10))
 
-    text = ['Hamiltonian','Translation Operator']
+    text = ['Hamiltonian','Translation Operator','Commutation']
 
     for ax,txt,M in zip(ax.flat,text,Matrices):
         ax.set(xlabel='state')
@@ -57,7 +59,7 @@ def plot_matrices(N,J,h,PBC = True):
                 if np.abs(M[i][j])>1E-10:
                     c = np.round(M[i][j].real,4)
                     ax.text(i, j, c, va='center', ha='center',color ='#71ACB3',fontsize=14)
-    plt.savefig(str(path)+'/trials/matrices.png')
+    plt.savefig(str(path)+'/trials/matrices_N{}h{}.png'.format(N,str(h[0])))
     plt.show()
 
 def plot_scatter(N,J,h,PBC):
@@ -90,13 +92,13 @@ def plot_scatter(N,J,h,PBC):
     ax.scatter(momenta / np.pi,energies.real)
     _, ind = (energies.real.min(),np.where(energies == energies.min())[0][0])
     ax.scatter(momenta[ind] / np.pi,energies[ind].real,marker = "o",s = 100)
-    plt.savefig(str(path)+'/trials/scatter.png')
+    plt.savefig(str(path)+'/trials/scatter_N{}h{}.png'.format(N,str(h[0])))
     plt.show()
 
 
-N=4
+N=2
 J=[0,0,1]
 h=[1,0,0]
 PBC =True
 plot_matrices(N,J,h,PBC = True)
-plot_scatter(N,J,h,PBC)
+#plot_scatter(N,J,h,PBC)
