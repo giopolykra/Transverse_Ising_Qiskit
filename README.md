@@ -67,3 +67,18 @@ Please note that the code is currently under heavy customization.
 The code is made to test arXiv:2002.06210v2 and arXiv:1805.08138v5
 ![Alt text](https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/log.png)
 ![Alt text](https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/en_N2_e1.png)
+
+## Known Bugs
+<ul>
+<li>epsilon dependency in the computation of excited states. Such a behavior is not expected according to arXiv:1805.08138v5
+
+
+![Alt text](https://github.com/giopolykra/Transverse_Ising_Qiskit/blob/master/trials/old_13.png)
+
+
+<ul>
+<li>Theoretical states with 
+<img src="https://latex.codecogs.com/gif.latex?<\psi_{theoretical}|T|\psi_{theoretical}>\neq0"/> 
+result in 
+<img src="https://latex.codecogs.com/gif.latex?<\psi_{simulated}|\psi_{theoretical}>=0"/> 
+
